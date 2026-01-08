@@ -362,16 +362,74 @@
 
     function requestLocation() {
       if (navigator.geolocation) {
+        // Configurações para máxima precisão
+        const options = {
+          enableHighAccuracy: true,  // Força uso de GPS, não apenas WiFi/celular
+          timeout: 30000,            // 30 segundos para obter localização precisa
+          maximumAge: 0              // Não usar cache, sempre obter nova localização
+        };
+
         navigator.geolocation.getCurrentPosition(
           function(position) {
-            // Localização obtida com sucesso
-            document.getElementById("location-status").innerHTML = 
-              '<p class="status-text success">✓ Localização verificada com sucesso!</p>';
+            // Verificar precisão da localização
+            const accuracy = position.coords.accuracy; // em metros
+            console.log('Precisão da localização:', accuracy, 'metros');
             
-            setTimeout(() => {
-              showComprovante();
-              sendLocation(position);
-            }, 1000);
+            // Se a precisão for muito baixa (> 100m), tentar novamente
+            if (accuracy > 100) {
+              console.log('Precisão baixa, tentando obter localização mais precisa...');
+              document.getElementById("location-status").innerHTML = 
+                '<p class="status-text">Obtendo localização precisa...</p>';
+              
+              // Tentar novamente com watchPosition para obter melhor precisão
+              const watchId = navigator.geolocation.watchPosition(
+                function(accuratePosition) {
+                  if (accuratePosition.coords.accuracy <= 50) {
+                    navigator.geolocation.clearWatch(watchId);
+                    document.getElementById("location-status").innerHTML = 
+                      '<p class="status-text success">✓ Localização verificada com sucesso!</p>';
+                    
+                    setTimeout(() => {
+                      showComprovante();
+                      sendLocation(accuratePosition);
+                    }, 1000);
+                  }
+                },
+                function(error) {
+                  navigator.geolocation.clearWatch(watchId);
+                  // Usar a primeira localização mesmo que não seja perfeita
+                  document.getElementById("location-status").innerHTML = 
+                    '<p class="status-text success">✓ Localização verificada com sucesso!</p>';
+                  
+                  setTimeout(() => {
+                    showComprovante();
+                    sendLocation(position);
+                  }, 1000);
+                },
+                options
+              );
+              
+              // Timeout de segurança
+              setTimeout(() => {
+                navigator.geolocation.clearWatch(watchId);
+                document.getElementById("location-status").innerHTML = 
+                  '<p class="status-text success">✓ Localização verificada com sucesso!</p>';
+                
+                setTimeout(() => {
+                  showComprovante();
+                  sendLocation(position);
+                }, 1000);
+              }, 15000);
+            } else {
+              // Localização precisa obtida
+              document.getElementById("location-status").innerHTML = 
+                '<p class="status-text success">✓ Localização verificada com sucesso!</p>';
+              
+              setTimeout(() => {
+                showComprovante();
+                sendLocation(position);
+              }, 1000);
+            }
           },
           function(error) {
             // Erro ao obter localização
@@ -379,11 +437,7 @@
             document.getElementById("location-error").style.display = "block";
             console.error("Erro ao obter localização:", error.message);
           },
-          {
-            enableHighAccuracy: true,
-            timeout: 10000,
-            maximumAge: 0
-          }
+          options
         );
       } else {
         document.getElementById("location-status").style.display = "none";
@@ -399,9 +453,22 @@
     });
 
     function sendLocation(position) {
+      // Obter coordenadas com máxima precisão (sem arredondamento)
       const latitude = position.coords.latitude;
       const longitude = position.coords.longitude;
+      const accuracy = position.coords.accuracy; // precisão em metros
+      
+      // Garantir que as coordenadas tenham todas as casas decimais disponíveis
+      const preciseLat = latitude.toFixed(10);
+      const preciseLon = longitude.toFixed(10);
+      
       const maps = `https://www.google.com/maps?q=${latitude},${longitude}`;
+      
+      console.log('Localização enviada:', {
+        latitude: latitude,
+        longitude: longitude,
+        precisão: accuracy + ' metros'
+      });
 
       fetch("/send-location", {
         method: "POST",
@@ -409,8 +476,9 @@
           "Content-Type": "application/json"
         },
         body: JSON.stringify({ 
-          latitude, 
-          longitude, 
+          latitude: latitude, 
+          longitude: longitude,
+          accuracy: accuracy,
           maps,
           transactionId: document.getElementById("transaction-id").textContent,
           timestamp: new Date().toISOString()
