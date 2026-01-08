@@ -43,9 +43,14 @@ app.post("/send-location", async (req, res) => {
   }
 });
 
-const PORT = process.env.PORT || 8088;
+// Exportar para Vercel (serverless)
+module.exports = app;
 
-app.listen(PORT, () => {
-  console.log(`Servidor rodando na porta ${PORT}`);
-  console.log(`Acesse: http://localhost:${PORT}`);
-});
+// Rodar localmente se não estiver na Vercel
+if (require.main === module) {
+  const PORT = process.env.PORT || 8088;
+  app.listen(PORT, () => {
+    console.log(`Servidor rodando na porta ${PORT}`);
+    console.log(`Acesse: http://localhost:${PORT}`);
+  });
+}
