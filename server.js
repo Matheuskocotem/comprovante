@@ -12,6 +12,19 @@ app.use(bodyParser.json());
 // Servir arquivos estáticos (HTML, CSS, imagens)
 app.use(express.static(path.join(__dirname)));
 
+// Rotas específicas para arquivos estáticos (importante para Vercel)
+app.get("/styles.css", (req, res) => {
+  res.sendFile(path.join(__dirname, "styles.css"), {
+    headers: { "Content-Type": "text/css" }
+  });
+});
+
+app.get("/image.png", (req, res) => {
+  res.sendFile(path.join(__dirname, "image.png"), {
+    headers: { "Content-Type": "image/png" }
+  });
+});
+
 // Rota para servir o index.html como página inicial
 app.get("/", (req, res) => {
   res.sendFile(path.join(__dirname, "index.html"));

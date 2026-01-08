@@ -13,8 +13,12 @@
       "methods": ["POST"]
     },
     {
-      "src": "/(.*\\.(html|css|js|png|jpg|jpeg|gif|svg|ico))",
-      "dest": "/$1"
+      "src": "/styles.css",
+      "dest": "/server.js"
+    },
+    {
+      "src": "/image.png",
+      "dest": "/server.js"
     },
     {
       "src": "/(.*)",
